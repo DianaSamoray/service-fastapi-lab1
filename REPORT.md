@@ -246,10 +246,7 @@ services:
     build: .
     image: shifts:latest
     environment:
-      DB_HOST: db
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     expose:
       - "8000"
     depends_on:
@@ -496,7 +493,7 @@ python loadgen/aggregate.py && python loadgen/calc.py
 
 ### 8.1. Прискорення і метрика Карпа-Флатта (N = 2)
 
-`S = X2 / X1` на тому самому рівні інтенсивності; `e = (1/S - 1/N) / (1 - 1/N)`, для N = 2: `e = (1/S - 0,5) / 0,5`.
+`S = X2 / X1` на тому самому рівні інтенсивності; `e = (1/S - 1/N) / (1 - 1/N)`, для N = 2: `e = (1/S - 0,5) / 0,5 = 2*(1/S-0,5)`.
 
 | Рівень, rps | X1 | X2 | S | e |
 |---|---|---|---|---|
