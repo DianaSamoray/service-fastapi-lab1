@@ -47,7 +47,7 @@ class ShiftDataGenerator:
         return {
             "doctor": "Watson",
             "department": "surgery",
-            "date": shift_date,
+            "shift_date": shift_date,
             "beginning_time": "14:38",
             "duration_hours": duration,
             "shift_type": "all-day",
@@ -82,7 +82,7 @@ class SeedService:
     def get_default_base_url() -> str:
         """Визначає адресу стенду з .env файлу."""
         env_file = Path(__file__).resolve().parent.parent / ".env"
-        port = "18080"
+        port = "8080"
         if env_file.exists():
             for line in env_file.read_text(encoding="utf-8").splitlines():
                 if line.startswith("LB_PORT="):
