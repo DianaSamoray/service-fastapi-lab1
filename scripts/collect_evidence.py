@@ -17,7 +17,7 @@ if env_file.exists():
     ENV = dict(
         line.split("=", 1)
         for line in env_file.read_text(encoding="utf-8").splitlines()
-        if "=" in line and not line.startswith("#")
+        if "=" in line and not line.strip().startswith("#")
     )
 
 PASSWORD = ENV.get("POSTGRES_PASSWORD", "").strip()
