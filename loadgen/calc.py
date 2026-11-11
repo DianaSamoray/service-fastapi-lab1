@@ -17,7 +17,7 @@ class KarpFlattCalculator:
     def calculate(agg: dict, num_nodes: int = 2) -> list[str]:
         out = [
             "## 1. Прискорення і метрика Карпа-Флатта (N = 2)\n",
-            "S = X2 / X1 на тому самому рівні; e = (1/S - 1/N) / (1 - 1/N) = (1/S - 0.5) / 0.5\n",
+            "S = X2 / X1 на тому самому рівні; e = (1/S - 1/N) / (1 - 1/N) = (1/S - 0.5) / 0.5=2*(1/S-0.5)\n",
             "| рівень, rps | X1 | X2 | S | e |\n|---|---|---|---|---|",
         ]
 
@@ -50,7 +50,7 @@ class LittlesLawCalculator:
             diff_pct = abs(l_calculated - l_measured) / l_measured * 100
 
             out.append(
-                f"λ = {lam:.2f} rps; W = {w * 1000:.2f} мс = {w:.5f} с; λ·W = {l_calculated:.4f}; "
+                f"lambda = {lam:.2f} rps; W = {w * 1000:.2f} мс = {w:.5f} с; lambda*W = {l_calculated:.4f}; "
                 f"виміряне L = {l_measured:.4f}; розбіжність = {diff_pct:.2f} %"
             )
 
