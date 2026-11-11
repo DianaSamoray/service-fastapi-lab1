@@ -116,7 +116,7 @@ class CalculationReport:
         self.results_dir = results_dir
         self.loop_calc = LoopComparisonCalculator(results_dir)
 
-    def generate() -> str:
+    def generate(self) -> str:
         agg_path = self.results_dir / "aggregate.json"
         if not agg_path.exists():
             raise FileNotFoundError("Спочатку виконайте скрипт aggregate.py")
