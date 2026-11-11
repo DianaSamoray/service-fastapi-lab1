@@ -199,7 +199,7 @@ class ClosedLoopWorker:
 
 
 class LoadAnalyzer:
-    """Аналiз результатів тестування та збереження метрик."""
+    """Аналіз результатів тестування та збереження метрик."""
 
     @staticmethod
     def percentile(sorted_vals: list, p: float):
@@ -265,7 +265,7 @@ class LoadGenerator:
     @staticmethod
     def default_base() -> str:
         env = Path(__file__).resolve().parent.parent / ".env"
-        port = "18080"
+        port = "8080"
         if env.exists():
             for line in env.read_text(encoding="utf-8").splitlines():
                 if line.startswith("LB_PORT="):
@@ -347,6 +347,8 @@ if __name__ == "__main__":
     if a.concurrency:
         s = LoadGenerator.run_closed(a.base, a.path, ids, a.concurrency, a.warmup, a.duration, a.procs, a.out)
     else:
+        if a.rate is None:
+            ap.error("Необхідно вказати --rate для відкритого контуру або --concurrency для закритого.")
         s = LoadGenerator.run_open(a.base, a.path, ids, a.rate, a.warmup, a.duration, a.procs, a.threads, a.out)
     
     print(json.dumps(s, indent=2))
