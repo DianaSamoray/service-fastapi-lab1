@@ -35,7 +35,7 @@ class KarpFlattCalculator:
 
 
 class LittlesLawCalculator:
-    """Перевірка Закону Літтла (L = λ * W)."""
+    """Перевірка Закону Літтла (L = lambda * W)."""
 
     @staticmethod
     def calculate(agg: dict, target_key: str = "1x/100") -> list[str]:
