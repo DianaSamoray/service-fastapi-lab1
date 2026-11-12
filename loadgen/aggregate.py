@@ -71,10 +71,11 @@ class ReportExporter:
 
     def __init__(self, results_dir: Path = RESULTS):
         self.results_dir = results_dir
+        self.results_dir.mkdir(parents=True, exist_ok=True)
 
     def export_json(self, data: dict, filename: str = "aggregate.json"):
         path = self.results_dir / filename
-        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def export_markdown(self, markdown_text: str, filename: str = "table.md"):
         path = self.results_dir / filename
