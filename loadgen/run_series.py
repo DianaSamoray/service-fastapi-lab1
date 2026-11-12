@@ -173,7 +173,8 @@ class BenchmarkRunner:
             "by_X-Instance_header": counts,
             "by_nginx_upstream_addr": upstream,
         }
-        (RESULTS / "distribution.json").write_text(json.dumps(out, indent=2))
+        RESULTS.mkdir(parents=True, exist_ok=True)
+        (RESULTS / "distribution.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
         print(json.dumps(out, indent=2))
 
     @staticmethod
@@ -182,7 +183,7 @@ class BenchmarkRunner:
         if not runs:
             raise SystemExit("спершу зніміть серію на одному інстансі")
 
-        conc = round(statistics.median(json.loads(p.read_text())["L_mean"] for p in runs))
+        conc = round(statistics.median(json.loads(p.read_text(encoding="utf-8"))["L_mean"] for p in runs))
         print(f"рівень {args.rate}, у відкритому контурі L_mean (медіана) = {conc} -> одночасних запитів {conc}")
 
         DockerEnvironmentManager.bring_up(1)
