@@ -189,12 +189,10 @@ python scripts/verify_flow.py lifecycle
 | 1. Перевірка генератора | `python loadgen/run_series.py selfcheck` | 1 хв |
 | 2. Серія, 1 інстанс | `python loadgen/run_series.py series --instances 1` | 7 хв |
 | 3. Серія, 2 інстанси | `python loadgen/run_series.py series --instances 2` | 7 хв |
-| 4. Верхні рівні, 1 інстанс | `python loadgen/run_series.py series --instances 1 --rates 700 800 1000 --stats` | 7 хв |
-| 5. Верхні рівні, 2 інстанси | `python loadgen/run_series.py series --instances 2 --rates 700 800 1000 --stats` | 7 хв |
-| 6. Розподіл по інстансах | `python loadgen/run_series.py distribution` | 1 хв |
-| 7. Закритий контур | `python loadgen/run_series.py closed --rate 700` | 4 хв |
-| 8. Зведення | `python loadgen/aggregate.py` | миттєво |
-| 9. Розрахунки | `python loadgen/calc.py` | миттєво |
+| 4. Розподіл по інстансах | `python loadgen/run_series.py distribution` | 1 хв |
+| 5. Закритий контур | `python loadgen/run_series.py closed --rate 500` | 4 хв |
+| 6. Зведення | `python loadgen/aggregate.py` | миттєво |
+| 7. Розрахунки | `python loadgen/calc.py` | миттєво |
 
 Скрипт сам піднімає потрібну кількість інстансів і сам засіває 100 записів. Вручну нічого робити не треба.
 
