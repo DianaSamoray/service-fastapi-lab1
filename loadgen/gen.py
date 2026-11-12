@@ -22,6 +22,7 @@ START_DELAY = 3.0
 
 _local = threading.local()
 
+
 class HTTPClient:
     """Клієнт для HTTP GET запитів з повторним використанням з'єднання (keep-alive)."""
 
@@ -321,6 +322,18 @@ class LoadGenerator:
         if out:
             LoadAnalyzer.save(out, records, summary)
         return summary
+
+
+# Сумісність зі старими імпортами
+def run_open(base: str, path: str, ids: list, rate: float, warmup: float,
+             duration: float, procs: int = None, threads: int = 64, out: str = None) -> dict:
+    return LoadGenerator.run_open(base, path, ids, rate, warmup, duration, procs, threads, out)
+
+
+def run_closed(base: str, path: str, ids: list, concurrency: int, warmup: float,
+               duration: float, procs: int = None, out: str = None,
+               use_async: bool = None, timeout: float = 90.0) -> dict:
+    return LoadGenerator.run_closed(base, path, ids, concurrency, warmup, duration, procs, out, use_async, timeout)
 
 
 def load_ids(path: str) -> list:
