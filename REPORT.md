@@ -350,7 +350,7 @@ LB_PORT=18080
 
 - **Розмір образу.** `docker image inspect shifts:latest --format '{{.Size}}'` повертає
   **337 754 741 байт (приблизно 322,1 МБ)**. Docker Desktop зі сховищем containerd повертає тут розмір стисненого
-  вмісту. Сума розмірів шарів у `docker image history` (87,6 + 4,95 + 41,4 + 79,8 МБ) дає **приблизно 214 МБ**
+  вмісту. Сума розмірів шарів у `docker image history` (110 + 41,4 + 4,9 + 87,7 МБ) дає **приблизно 248 МБ**
   у розпакованому вигляді. Обидва значення наведено свідомо, щоб було видно, яка саме метрика використана.
 - **Час від `docker compose up` до першого 200 на `/healthz`** (образи зібрані, томи порожні, `down -v` перед кожним
   повтором, `scripts/startup_time.py`): **20,71 с; 6,31 с; 6,33 с. Медіана 6,33 с.**
@@ -485,16 +485,16 @@ python loadgen/aggregate.py && python loadgen/calc.py
 |---|---|---|---|---|
 | 10 | 10,0 | 10,0 | 1 | 1 |
 | 100 | 100,0 | 100,0 | 1 | 1 |
-| 500 | 0 | 12,8 | NaN | -1 |
+| 500 | 0 | 12,8 | - | - |
 
 Підстановка для 100: `S = 100,0 / 100,5 = 1`; `1/S = 1`; `e = (1 - 0,5) / 0,5 = 1`.
-Для 500: `S = 12,8 / 0 = NaN`; `1/S = 0`; `e = (0 - 0,5) / 0,5 = -1`.
+Для 500: `S = NaN`; `e = (0 - 0,5) / 0,5 = -1 - помилка: частка нерозпаралеленої роботи не може бути від'ємна`.
 
 Що це означає:
 
 - На 10 rps і 100 rps обидві конфігурації досягли заданих 500 rps, тому `S` близьке до 1 це відношення **заданих** значень,
   а не потужностей. Це не вимірювання прискорення, і в підсумок воно не береться.
-- Змістовний рівень - це 500: **S невизначена і наближається до нескінченності, частка нерозпаралеленої роботи e дорівнює -1, що є помилкою обчислень.**
+- Змістовний рівень - це 500: **S невизначена, оскільки X1 дорівнює 0, частка нерозпаралеленої роботи e також не визначена і не може бути від'ємною.**
   Розкид великий, бо в режимі перевантаження результат нестабільний (див. розділ 0).
 - Значення `e`, близьке до 1, означає, що друга репліка майже не додала. Спільною для обох інстансів лишилась
   обчислювальна потужність хоста. Якби база була не одна на два інстанси, `e` змінилось би мало, бо база не насичена
@@ -680,74 +680,74 @@ X = 642 це 171 мс. Саме тому генератор із фіксова�
 Максимальний розмір файлу 50 МБ, максимальна кількість файлів 3. Підтвердження (вивід команд, `results/evidence.md`):
 
 ### Контейнери, порти і стан здоровʼя (публікує порт лише lb)
-`docker compose ps --format table {{.Name}}	{{.Status}}	{{.Ports}}`
+`docker compose ps --format table {{.Name}}     {{.Status}}     {{.Ports}}`
 
 ```
-NAME           STATUS                    PORTS
-shifts-db-1    Up 2 hours (healthy)      5432/tcp
-shifts-lb-1    Up 2 hours                0.0.0.0:18080->80/tcp, [::]:18080->80/tcp
-shifts-web-2   Up 44 seconds (healthy)   8000/tcp
+NAME           STATUS                      PORTS
+shifts-db-1    Up 11 minutes (healthy)     5432/tcp
+shifts-lb-1    Up 8 minutes                0.0.0.0:18080->80/tcp, [::]:18080->80/tcp
+shifts-web-1   Up 11 minutes (healthy)     8000/tcp
+shifts-web-2   Up 11 minutes (unhealthy)   8000/tcp
 ```
 
 ### Розмір фінального образу
 `docker image inspect shifts:latest --format {{.Size}} байт`
 
 ```
-65625557 байт
+337754741 байт
 ```
 
 ### Шари образу
-`docker image history shifts:latest --format {{.Size}}	{{.CreatedBy}}`
+`docker image history shifts:latest --format {{.Size}}  {{.CreatedBy}}`
 
 ```
-0B	CMD ["uvicorn" "app.main:app" "--host" "0.0.…
-0B	EXPOSE [8000/tcp]
-0B	USER 10001
-20.5kB	COPY app ./app # buildkit
-4.1kB	WORKDIR /srv
-79.9MB	COPY /opt/venv /opt/venv # buildkit
-41kB	RUN /bin/sh -c useradd --system --uid 10001 …
-0B	ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/l…
-0B	CMD ["python3"]
-16.4kB	RUN /bin/sh -c set -eux;  for src in idle3 p…
-41.4MB	RUN /bin/sh -c set -eux;   savedAptMark="$(a…
-0B	ENV PYTHON_SHA256=c2c4321961fab0fb999d66e0ce…
-0B	ENV PYTHON_VERSION=3.12.15
-0B	ENV GPG_KEY=7169605F62C751356D054A26A821E680…
-4.94MB	RUN /bin/sh -c set -eux;  apt-get update;  a…
-0B	ENV LANG=C.UTF-8
-0B	ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…
-87.7MB	# debian.sh --arch 'amd64' out/ 'trixie' '@1…
+0B      CMD ["uvicorn" "app.main:app" "--host" "0.0.…
+0B      EXPOSE [8000/tcp]
+0B      USER 10001
+20.5kB  COPY app ./app # buildkit
+4.1kB   WORKDIR /srv
+110MB   COPY /opt/venv /opt/venv # buildkit
+41kB    RUN /bin/sh -c useradd --system --uid 10001 …
+13.5MB  RUN /bin/sh -c apt-get update && apt-get ins…
+0B      ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/l…
+0B      CMD ["python3"]
+16.4kB  RUN /bin/sh -c set -eux;  for src in idle3 p…
+41.4MB  RUN /bin/sh -c set -eux;   savedAptMark="$(a…
+0B      ENV PYTHON_SHA256=b5796915dc45ff745cfb4e990a…
+0B      ENV PYTHON_VERSION=3.12.16
+0B      ENV GPG_KEY=7169605F62C751356D054A26A821E680…
+4.93MB  RUN /bin/sh -c set -eux;  apt-get update;  a…
+0B      ENV LANG=C.UTF-8
+0B      ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…
+87.7MB  # debian.sh --arch 'amd64' out/ 'trixie' '@1…
 ```
 
 ### Процес у контейнері: uid і користувач
-`docker exec shifts-web-2 id`
+`docker exec shifts-web-1 id`
 
 ```
 uid=10001(app) gid=999(app) groups=999(app)
 ```
 
-### додаткова вимога: обмеження драйвера логів за розміром і кількістю файлів
-`docker inspect shifts-web-2 --format LogConfig Type={{.HostConfig.LogConfig.Type}} Config={{json .HostConfig.LogConfig.Config}}`
+### Додаткова вимога: обмеження драйвера логів (max-size і max-file)
+`docker inspect shifts-web-1 --format LogConfig Type={{.HostConfig.LogConfig.Type}} Config={{json .HostConfig.LogConfig.Config}}`
 
 ```
-curl: немає
-wget: немає
-gcc: немає
+LogConfig Type=json-file Config={"max-file":"3","max-size":"50m"}
 ```
 
 ### Healthcheck сервісу (команда і стан)
-`docker inspect shift-web-2 --format {{json .Config.Healthcheck.Test}} => {{.State.Health.Status}}`
+`docker inspect shifts-web-1 --format {{json .Config.Healthcheck.Test}} => {{.State.Health.Status}}`
 
 ```
-["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"] => healthy
+["CMD","curl","-f","http://127.0.0.1:8000/healthz"] => healthy
 ```
 
 ### Обмеження ресурсів web
-`docker inspect shift-web-2 --format NanoCpus={{.HostConfig.NanoCpus}} Memory={{.HostConfig.Memory}}`
+`docker inspect shifts-web-1 --format NanoCpus={{.HostConfig.NanoCpus}} Memory={{.HostConfig.Memory}}`
 
 ```
-NanoCpus=1000000000 Memory=536870912
+NanoCpus=1000000000 Memory=805306368
 ```
 
 ### Пароль не в образі, не в історії збірки, не в репозиторії
@@ -761,7 +761,7 @@ NanoCpus=1000000000 Memory=536870912
 `git check-ignore -v .env`
 
 ```
-.gitignore:1:.env	.env
+.gitignore:1:.env       .env
 ```
 
 ### Порти бази і вебінстансів з хоста недоступні, балансувальник доступний
@@ -772,7 +772,7 @@ NanoCpus=1000000000 Memory=536870912
 ```
 
 ### База доступна з контейнера сервісу за іменем db
-`docker exec shifts-web-2 python -c import socket;s=socket.create_connection(('db',5432),2);print('db:5432 підключення є')`
+`docker exec shifts-web-1 python -c import socket;s=socket.create_connection(('db',5432),2);print('db:5432 підключення є')`
 
 ```
 db:5432 підключення є
@@ -782,7 +782,8 @@ db:5432 підключення є
 `docker compose ps web --format {{.Name}}`
 
 ```
-donors-web-2
+shifts-web-1
+shifts-web-2
 ```
 
 ## 11. Відкинуті рішення
