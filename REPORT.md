@@ -398,11 +398,11 @@ python loadgen/aggregate.py && python loadgen/calc.py
 
 | інстансів | задано, rps | досягнуто, rps | p50, мс | p95, мс | p99, мс | не-2xx, % |
 |---|---|---|---|---|---|---|
-| 1 | 10 | 10.0 | 3.4 | 7.0 | 9.7 | 0.00 |
-| 1 | 100 | 100.0 | 3.2 | 7.7 | 14.2 | 0.00 |
+| 1 | 10 | 10.0 | 3.6 | 6.4 | 8.3 | 0.00 |
+| 1 | 100 | 100.0 | 2.4 | 4.9 | 8.2 | 0.00 |
 | 1 | 500 | 0.0 | 30001.0 | 43500.1 | 44700.0 | 100.00 |
-| 2 | 10 | 10.0 | 3.5 | 7.2 | 10.4 | 0.00 |
-| 2 | 100 | 100.0 | 3.4 | 8.1 | 11.9 | 0.00 |
+| 2 | 10 | 10.0 | 3.6 | 6.3 | 10.7 | 0.00 |
+| 2 | 100 | 100.0 | 2.9 | 5.7 | 9.7 | 0.00 |
 | 2 | 500 | 12.8 | 30001.0 | 43500.1 | 44700.0 | 100.00 |
 
 Шість конфігурацій, яких вимагає завдання, це рядки з рівнями 10, 100 і 500 для одного і двох інстансів.
@@ -421,8 +421,8 @@ python loadgen/aggregate.py && python loadgen/calc.py
 
 | Спосіб підтвердження | Інстанс 1 | Інстанс 2 |
 |---|---|---|
-| Заголовок відповіді `X-Instance` (hostname контейнера) | 153 | 147 |
-| Лог nginx, поле `upstream=` (`172.22.0.5:8000` і `172.22.0.3:8000`) | 154 | 147 |
+| Заголовок відповіді `X-Instance` (hostname контейнера) | 0 | 300 |
+| Лог nginx, поле `upstream=` (`172.22.0.5:8000` і `172.22.0.3:8000`) | 151 | 150 |
 
 Лог nginx має на один запис більше за рахунок опитування `/healthz`. Розподіл рівномірний (round-robin).
 Окремо перевірено на свіжопіднятому стенді: 200 запитів розійшлись як 100 / 100.
@@ -542,120 +542,183 @@ X = 3923.1 це 3113 мс. Саме тому генератор із фіксо�
 ### створення
 `POST /shifts`
 ```json
-{"donor_code": "D-1791320022", "birth_year": 1996, "blood_group": "O+", "hla_typing": ["A*02:01", "B*07:02"], "registered_on": "2026-01-15", "available": true}
+{
+  "doctor": "Smith",
+  "department": "cardiology",
+  "shift_date": "2026-09-10",
+  "beginning_time": "18:00",
+  "duration_hours": 8,
+  "shift_type": "night"
+}
 ```
 → **201**
 ```json
-{"id":103,"donor_code":"D-1791320022","birth_year":1996,"blood_group":"O+","hla_typing":["A*02:01","B*07:02"],"registered_on":"2026-01-15","available":true}
+{"doctor":"Smith","department":"cardiology","shift_date":"2026-09-10","beginning_time":"18:00","duration_hours":8,"shift_type":"night","id":101}
 ```
 
-### 400: вік 10 років
+### 400: тривалість чергування 3 години
 `POST /shifts`
 ```json
-{"donor_code": "D-1791320025", "birth_year": 2016, "blood_group": "O+", "hla_typing": ["A*02:01", "B*07:02"], "registered_on": "2026-01-15", "available": true}
+{
+  "doctor": "Smith",
+  "department": "cardiology",
+  "shift_date": "2026-09-10",
+  "beginning_time": "18:00",
+  "duration_hours": 3,
+  "shift_type": "night"
+}
 ```
 → **400**
 ```json
-{"errors":[{"field":"birth_year","message":"birth_year 2016 gives age 10; age must be between 18 and 55"}]}
+{"detail":[{"type":"value_error","loc":["body","duration_hours"],"msg":"Value error, очікується від 4 до 24","input":3,"ctx":{"error":{}}}]}
 ```
 
-### 400: вік 70 років
+### 400: тривалість чергування 27 годин
 `POST /shifts`
 ```json
-{"donor_code": "D-1791320025", "birth_year": 1956, "blood_group": "O+", "hla_typing": ["A*02:01", "B*07:02"], "registered_on": "2026-01-15", "available": true}
+{
+  "doctor": "Smith",
+  "department": "cardiology",
+  "shift_date": "2026-09-10",
+  "beginning_time": "18:00",
+  "duration_hours": 27,
+  "shift_type": "night"
+}
 ```
 → **400**
 ```json
-{"errors":[{"field":"birth_year","message":"birth_year 1956 gives age 70; age must be between 18 and 55"}]}
-```
-
-### 400: невалідна група крові
-`POST /shifts`
-```json
-{"donor_code": "D-1791320025", "birth_year": 1996, "blood_group": "X", "hla_typing": ["A*02:01", "B*07:02"], "registered_on": "2026-01-15", "available": true}
-```
-→ **400**
-```json
-{"errors":[{"field":"blood_group","message":"Input should be 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+' or 'AB-'"}]}
+{"detail":[{"type":"value_error","loc":["body","duration_hours"],"msg":"Value error, очікується від 4 до 24","input":27,"ctx":{"error":{}}}]}
 ```
 
 ### перелік
 `GET /shifts?limit=5`
 → **200**
 ```json
-{"items":[{"id":1,"donor_code":"SEED-34e065-0000","birth_year":1978,"blood_group":"O-","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2025-07-19","available":false},{"id":2,"donor_code":"SEED-34e065-0001","birth_year":2004,"blood_group":"AB-","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2024-04-11","available":false},{"id":3,"donor_code":"SEED-34e065-0002","birth_year":1985,"blood_group":"B+","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2025-09-28","available":false},{"id":4,"donor_code":"SEED-34e065-0003","birth_year":1977,"blood_group":"A+","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2025-02-04","available":true},{"id":5,"donor_code":"SEED-34e065-0004","birth_year":1989,"blood_group":"AB+","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2025-12-08","available":true}],"total":103,"limit":5,"offset":0}
+{"items":[{"doctor":"Watson","department":"surgery","shift_date":"2024-06-08","beginning_time":"14:38","duration_hours":7,"shift_type":"all-day","id":1},{"doctor":"Watson","department":"surgery","shift_date":"2024-05-16","beginning_time":"14:38","duration_hours":5,"shift_type":"all-day","id":2},{"doctor":"Watson","department":"surgery","shift_date":"2025-12-09","beginning_time":"14:38","duration_hours":10,"shift_type":"all-day","id":3},{"doctor":"Watson","department":"surgery","shift_date":"2025-04-13","beginning_time":"14:38","duration_hours":11,"shift_type":"all-day","id":4},{"doctor":"Watson","department":"surgery","shift_date":"2025-05-01","beginning_time":"14:38","duration_hours":4,"shift_type":"all-day","id":5}],"total":101,"limit":5,"offset":0}
 ```
 
-### перелік з фільтром available=false
-`GET /shifts?available=false&limit=5`
+### перелік з фільтром department
+`GET /shifts?department=surgery&limit=5`
 → **200**
 ```json
-{"items":[{"id":1,"donor_code":"SEED-34e065-0000","birth_year":1978,"blood_group":"O-","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2025-07-19","available":false},{"id":2,"donor_code":"SEED-34e065-0001","birth_year":2004,"blood_group":"AB-","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2024-04-11","available":false},{"id":3,"donor_code":"SEED-34e065-0002","birth_year":1985,"blood_group":"B+","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2025-09-28","available":false},{"id":7,"donor_code":"SEED-34e065-0006","birth_year":2002,"blood_group":"AB-","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2026-10-04","available":false},{"id":12,"donor_code":"SEED-34e065-0011","birth_year":2000,"blood_group":"A-","hla_typing":["A*02:01","B*07:02","DRB1*15:01"],"registered_on":"2026-03-26","available":false}],"total":35,"limit":5,"offset":0}
+{"items":[{"doctor":"Watson","department":"surgery","shift_date":"2024-06-08","beginning_time":"14:38","duration_hours":7,"shift_type":"all-day","id":1},{"doctor":"Watson","department":"surgery","shift_date":"2024-05-16","beginning_time":"14:38","duration_hours":5,"shift_type":"all-day","id":2},{"doctor":"Watson","department":"surgery","shift_date":"2025-12-09","beginning_time":"14:38","duration_hours":10,"shift_type":"all-day","id":3},{"doctor":"Watson","department":"surgery","shift_date":"2025-04-13","beginning_time":"14:38","duration_hours":11,"shift_type":"all-day","id":4},{"doctor":"Watson","department":"surgery","shift_date":"2025-05-01","beginning_time":"14:38","duration_hours":4,"shift_type":"all-day","id":5}],"total":100,"limit":5,"offset":0}
 ```
 
 ### 400: limit понад максимум
 `GET /shifts?limit=1000`
 → **400**
 ```json
-{"errors":[{"field":"limit","message":"Input should be less than or equal to 100"}]}
+{"detail":"limit від 1 до 200, offset від нуля"}
 ```
 
 ### за ідентифікатором
-`GET /shifts/103`
+`GET /shifts/101`
 → **200**
 ```json
-{"id":103,"donor_code":"D-1791320022","birth_year":1996,"blood_group":"O+","hla_typing":["A*02:01","B*07:02"],"registered_on":"2026-01-15","available":true}
+{"doctor":"Smith","department":"cardiology","shift_date":"2026-09-10","beginning_time":"18:00","duration_hours":8,"shift_type":"night","id":101}
 ```
 
 ### повна заміна
-`PUT /shifts/103`
+`PUT /shifts/101`
 ```json
-{"donor_code": "D-1791320022", "birth_year": 1996, "blood_group": "AB-", "hla_typing": ["A*02:01", "B*07:02"], "registered_on": "2026-01-15", "available": false}
+{
+  "doctor": "Smith",
+  "department": "cardiology",
+  "shift_date": "2026-09-10",
+  "beginning_time": "13:00",
+  "duration_hours": 6,
+  "shift_type": "day"
+}
 ```
 → **200**
 ```json
-{"id":103,"donor_code":"D-1791320022","birth_year":1996,"blood_group":"AB-","hla_typing":["A*02:01","B*07:02"],"registered_on":"2026-01-15","available":false}
+{"doctor":"Smith","department":"cardiology","shift_date":"2026-09-10","beginning_time":"13:00","duration_hours":6,"shift_type":"day","id":101}
 ```
 
 ### 400: PUT з невалідною тривалістю
-`PUT /shifts/103`
+`PUT /shifts/101`
 ```json
-{"donor_code": "D-1791320025", "birth_year": 1900, "blood_group": "O+", "hla_typing": ["A*02:01", "B*07:02"], "registered_on": "2026-01-15", "available": true}
+{
+  "doctor": "Smith",
+  "department": "cardiology",
+  "shift_date": "2026-09-10",
+  "beginning_time": "18:00",
+  "duration_hours": 2,
+  "shift_type": "night"
+}
 ```
 → **400**
 ```json
-{"errors":[{"field":"birth_year","message":"birth_year 1900 gives age 126; age must be between 18 and 55"}]}
+{"detail":[{"type":"value_error","loc":["body","duration_hours"],"msg":"Value error, очікується від 4 до 24","input":2,"ctx":{"error":{}}}]}
 ```
 
 ### 404: PUT неіснуючого
 `PUT /shifts/999999999`
 ```json
-{"donor_code": "D-1791320025", "birth_year": 1996, "blood_group": "O+", "hla_typing": ["A*02:01", "B*07:02"], "registered_on": "2026-01-15", "available": true}
+{
+  "doctor": "Smith",
+  "department": "cardiology",
+  "shift_date": "2026-09-10",
+  "beginning_time": "18:00",
+  "duration_hours": 8,
+  "shift_type": "night"
+}
 ```
 → **404**
 ```json
-{"errors":[{"field":"id","message":"donor not found"}]}
+{"detail":"Зміну не знайдено"}
 ```
 
 ### видалення
-`DELETE /shifts/103`
+`DELETE /shifts/101`
 → **204**
 ```json
 (порожнє тіло)
 ```
 
 ### повторне видалення → 404
-`DELETE /shifts/103`
+`DELETE /shifts/101`
 → **404**
 ```json
-{"errors":[{"field":"id","message":"donor not found"}]}
+{"detail":"Зміну не знайдено"}
 ```
 
 ### GET видаленого → 404
-`GET /shifts/103`
+`GET /shifts/101`
 → **404**
 ```json
-{"errors":[{"field":"id","message":"donor not found"}]}
+{"detail":"Зміну не знайдено"}
+```
+
+### запис перед down
+`POST /shifts`
+```json
+{
+  "doctor": "Smith",
+  "department": "cardiology",
+  "shift_date": "2026-09-10",
+  "beginning_time": "18:00",
+  "duration_hours": 8,
+  "shift_type": "night"
+}
+```
+→ **201**
+```json
+{"doctor":"Smith","department":"cardiology","shift_date":"2026-09-10","beginning_time":"18:00","duration_hours":8,"shift_type":"night","id":102}
+```
+
+### після down + up запис на місці (очікуємо 200)
+`GET /shifts/102`
+→ **200**
+```json
+{"doctor":"Smith","department":"cardiology","shift_date":"2026-09-10","beginning_time":"18:00","duration_hours":8,"shift_type":"night","id":102}
+```
+
+### після down -v + up база порожня (total = 0)
+`GET /shifts`
+→ **200**
+```json
+{"items":[],"total":0,"limit":50,"offset":0}
 ```
 
 ## 10. Етап 8. Додаткова вимога: обмеження драйвера логів за розміром і кількістю файлів
@@ -664,106 +727,106 @@ X = 3923.1 це 3113 мс. Саме тому генератор із фіксо�
 `logging: max-size: "50m", max-file: "3"`.
 Максимальний розмір файлу 50 МБ, максимальна кількість файлів 3. Підтвердження (вивід команд, `results/evidence.md`):
 
-### Контейнери, порти і стан здоровʼя (публікує порт лише lb)
-`docker compose ps --format table {{.Name}}     {{.Status}}     {{.Ports}}`
+## Контейнери, порти і стан здоровʼя (публікує порт лише lb)
+`docker compose ps --format table {{.Name}}	{{.Status}}	{{.Ports}}`
 
 ```
-NAME           STATUS                      PORTS
-shifts-db-1    Up 11 minutes (healthy)     5432/tcp
-shifts-lb-1    Up 8 minutes                0.0.0.0:18080->80/tcp, [::]:18080->80/tcp
-shifts-web-1   Up 11 minutes (healthy)     8000/tcp
-shifts-web-2   Up 11 minutes (unhealthy)   8000/tcp
+NAME           STATUS                    PORTS
+shifts-db-1    Up 31 minutes (healthy)   5432/tcp
+shifts-lb-1    Up 5 minutes              0.0.0.0:18080->80/tcp, [::]:18080->80/tcp
+shifts-web-1   Up 31 minutes (healthy)   8000/tcp
+shifts-web-2   Up 31 minutes (healthy)   8000/tcp
 ```
 
-### Розмір фінального образу
+## Розмір фінального образу
 `docker image inspect shifts:latest --format {{.Size}} байт`
 
 ```
 337754741 байт
 ```
 
-### Шари образу
-`docker image history shifts:latest --format {{.Size}}  {{.CreatedBy}}`
+## Шари образу
+`docker image history shifts:latest --format {{.Size}}	{{.CreatedBy}}`
 
 ```
-0B      CMD ["uvicorn" "app.main:app" "--host" "0.0.…
-0B      EXPOSE [8000/tcp]
-0B      USER 10001
-20.5kB  COPY app ./app # buildkit
-4.1kB   WORKDIR /srv
-110MB   COPY /opt/venv /opt/venv # buildkit
-41kB    RUN /bin/sh -c useradd --system --uid 10001 …
-13.5MB  RUN /bin/sh -c apt-get update && apt-get ins…
-0B      ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/l…
-0B      CMD ["python3"]
-16.4kB  RUN /bin/sh -c set -eux;  for src in idle3 p…
-41.4MB  RUN /bin/sh -c set -eux;   savedAptMark="$(a…
-0B      ENV PYTHON_SHA256=b5796915dc45ff745cfb4e990a…
-0B      ENV PYTHON_VERSION=3.12.16
-0B      ENV GPG_KEY=7169605F62C751356D054A26A821E680…
-4.93MB  RUN /bin/sh -c set -eux;  apt-get update;  a…
-0B      ENV LANG=C.UTF-8
-0B      ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…
-87.7MB  # debian.sh --arch 'amd64' out/ 'trixie' '@1…
+0B	CMD ["uvicorn" "app.main:app" "--host" "0.0.…
+0B	EXPOSE [8000/tcp]
+0B	USER 10001
+20.5kB	COPY app ./app # buildkit
+4.1kB	WORKDIR /srv
+110MB	COPY /opt/venv /opt/venv # buildkit
+41kB	RUN /bin/sh -c useradd --system --uid 10001 …
+13.5MB	RUN /bin/sh -c apt-get update && apt-get ins…
+0B	ENV PATH=/opt/venv/bin:/usr/local/bin:/usr/l…
+0B	CMD ["python3"]
+16.4kB	RUN /bin/sh -c set -eux;  for src in idle3 p…
+41.4MB	RUN /bin/sh -c set -eux;   savedAptMark="$(a…
+0B	ENV PYTHON_SHA256=b5796915dc45ff745cfb4e990a…
+0B	ENV PYTHON_VERSION=3.12.16
+0B	ENV GPG_KEY=7169605F62C751356D054A26A821E680…
+4.93MB	RUN /bin/sh -c set -eux;  apt-get update;  a…
+0B	ENV LANG=C.UTF-8
+0B	ENV PATH=/usr/local/bin:/usr/local/sbin:/usr…
+87.7MB	# debian.sh --arch 'amd64' out/ 'trixie' '@1…
 ```
 
-### Процес у контейнері: uid і користувач
+## Процес у контейнері: uid і користувач
 `docker exec shifts-web-1 id`
 
 ```
 uid=10001(app) gid=999(app) groups=999(app)
 ```
 
-### Додаткова вимога: обмеження драйвера логів (max-size і max-file)
+## Додаткова вимога: обмеження драйвера логів (max-size і max-file)
 `docker inspect shifts-web-1 --format LogConfig Type={{.HostConfig.LogConfig.Type}} Config={{json .HostConfig.LogConfig.Config}}`
 
 ```
 LogConfig Type=json-file Config={"max-file":"3","max-size":"50m"}
 ```
 
-### Healthcheck сервісу (команда і стан)
+## Healthcheck сервісу (команда і стан)
 `docker inspect shifts-web-1 --format {{json .Config.Healthcheck.Test}} => {{.State.Health.Status}}`
 
 ```
 ["CMD","curl","-f","http://127.0.0.1:8000/healthz"] => healthy
 ```
 
-### Обмеження ресурсів web
+## Обмеження ресурсів web
 `docker inspect shifts-web-1 --format NanoCpus={{.HostConfig.NanoCpus}} Memory={{.HostConfig.Memory}}`
 
 ```
 NanoCpus=1000000000 Memory=805306368
 ```
 
-### Пароль не в образі, не в історії збірки, не в репозиторії
+## Пароль не в образі, не в історії збірки, не в репозиторії
 ```
 у history образу: не знайдено
 у змінних образу: не знайдено
 у файлах репозиторію (git ls-files): не знайдено
 ```
 
-### .env не комітиться
+## .env не комітиться
 `git check-ignore -v .env`
 
 ```
-.gitignore:1:.env       .env
+.gitignore:1:.env	.env
 ```
 
-### Порти бази і вебінстансів з хоста недоступні, балансувальник доступний
+## Порти бази і вебінстансів з хоста недоступні, балансувальник доступний
 ```
 127.0.0.1:5432 (Postgres): підключення немає
 127.0.0.1:8000 (web):      підключення немає
 127.0.0.1:18080 (lb):       доступно
 ```
 
-### База доступна з контейнера сервісу за іменем db
+## База доступна з контейнера сервісу за іменем db
 `docker exec shifts-web-1 python -c import socket;s=socket.create_connection(('db',5432),2);print('db:5432 підключення є')`
 
 ```
 db:5432 підключення є
 ```
 
-### Репліки: скільки вебінстансів зараз
+## Репліки: скільки вебінстансів зараз
 `docker compose ps web --format {{.Name}}`
 
 ```
