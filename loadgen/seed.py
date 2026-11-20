@@ -43,14 +43,22 @@ class ShiftDataGenerator:
         duration = random.randint(4, 24)
         random_days = random.randint(0, 1000)
         shift_date = (date.today() - timedelta(days=random_days)).isoformat()
+        h=random.randint(0, 23)
+        m=random.randint(0, 59)
+        if h<5 or h>=18:
+            shift_type="night"
+        elif h>=9 and h<17:
+            shift_type="day"
+        else:
+            shift_type="all-day"
 
         return {
-            "doctor": "Watson",
-            "department": "surgery",
+            "doctor": random.choice(["Watson", "Smith", "Peterson", "Tompson"]),
+            "department": random.choice(["cardiology", "surgery", "neurology", "therapeutic", "oncology"]),
             "shift_date": shift_date,
-            "beginning_time": "14:38",
+            "beginning_time": f"{h:02d}:{m:02d}",
             "duration_hours": duration,
-            "shift_type": "all-day",
+            "shift_type": shift_type,
         }
 
 
