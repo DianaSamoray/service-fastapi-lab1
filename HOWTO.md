@@ -262,7 +262,7 @@ python scripts/collect_evidence.py
 | `closed/` | прогони закритого контуру |
 | `selfcheck/` | перевірка генератора проти порожнього ендпоінта |
 | `stats/` | `docker stats` під час прогонів |
-| `host_1x_rate1000.csv`, `host_2x_rate1000.csv` | CPU і пам'ять хоста під час прогонів |
+| `host_1x_rate500.csv`, `host_2x_rate500.csv` | CPU і пам'ять хоста під час прогонів |
 | `table.md` | підсумкова таблиця вимірювань (з `aggregate.py`) |
 | `aggregate.json` | ті самі медіани у вигляді даних |
 | `calculations.md` | три розрахунки (з `calc.py`) |
